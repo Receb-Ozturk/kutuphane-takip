@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Ana Sayfa - Kütüphane Takip Sistemi{% endblock %}
+
+{% block content %}
+<div class="row align-items-center justify-content-center py-5">
+    <div class="col-lg-8 text-center">
+        <div class="d-inline-flex p-4 rounded-circle bg-primary-subtle text-primary mb-4">
+            <i class="bi bi-book-half display-3"></i>
+        </div>
+        <h1 class="display-5 fw-bold text-dark mb-3">Kütüphane Takip Sistemi</h1>
+        <p class="lead text-muted mb-4">
+            Gelişmiş kullanıcı ve admin paneli ile kitap ödünç alma, termin süresi takibi ve dinamik envanter yönetimi tek bir platformda.
+        </p>
+
+        <div class="d-flex justify-content-center gap-3">
+            {% if session.get('kullanici_id') %}
+                {% if session.get('rol') == 'admin' %}
+                    <a href="{{ url_for('admin_paneli') }}" class="btn btn-danger btn-lg px-4 btn-rounded">
+                        <i class="bi bi-shield-shaded me-2"></i>Admin Paneline Git
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('kullanici_paneli') }}" class="btn btn-primary btn-lg px-4 btn-rounded">
+                        <i class="bi bi-journal-bookmark me-2"></i>Kullanıcı Paneline Git
+                    </a>
+                {% endif %}
+            {% else %}
+                <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg px-4 btn-rounded">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>Giriş Yap
+                </a>
+                <a href="{{ url_for('register') }}" class="btn btn-outline-secondary btn-lg px-4 btn-rounded">
+                    <i class="bi bi-person-plus me-2"></i>Kayıt Ol
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

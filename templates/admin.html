@@ -1,0 +1,446 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Paneli - Kütüphane Takip Sistemi{% endblock %}
+
+{% block content %}
+<!-- Başlık ve Yönetici Bilgisi -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-shield-shaded text-danger me-2"></i>Admin Yönetim Paneli</h2>
+        <p class="text-muted mb-0">Kullanıcı takibi, ödünç hareketleri ve kitap envanterini buradan yönetebilirsiniz.</p>
+    </div>
+    <div>
+        <button type="button" class="btn btn-primary btn-rounded shadow-sm" data-bs-toggle="modal" data-bs-target="#kitapEkleModal">
+            <i class="bi bi-plus-circle me-1"></i> Yeni Kitap Ekle
+        </button>
+    </div>
+</div>
+
+<!-- ÖZET İSTATİSTİK KARTLARI -->
+<div class="row g-3 mb-4">
+    <!-- Kaç Kullanıcı Var? -->
+    <div class="col-sm-6 col-lg-3">
+        <div class="card p-3 stat-card">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small fw-semibold">Kayıtlı Kullanıcı Sayısı</span>
+                    <h3 class="fw-bold mb-0 text-primary">{{ kullanici_sayisi }}</h3>
+                </div>
+                <div class="p-3 bg-primary-subtle text-primary rounded-circle">
+                    <i class="bi bi-people-fill fs-3"></i>
+                </div>
+            </div>
+            <small class="text-muted mt-2 d-block">Sistemdeki üye sayısı</small>
+        </div>
+    </div>
+
+    <!-- Toplam Kitap Çeşidi ve Stok -->
+    <div class="col-sm-6 col-lg-3">
+        <div class="card p-3" style="border-left: 4px solid #10b981;">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small fw-semibold">Kitap Envanteri</span>
+                    <h3 class="fw-bold mb-0 text-success">{{ toplam_kitap_cesidi }} <span class="fs-6 text-muted fw-normal">({{ toplam_kitap_stok }} adet)</span></h3>
+                </div>
+                <div class="p-3 bg-success-subtle text-success rounded-circle">
+                    <i class="bi bi-book-half fs-3"></i>
+                </div>
+            </div>
+            <small class="text-muted mt-2 d-block">Çeşit ve toplam fiziksel adet</small>
+        </div>
+    </div>
+
+    <!-- Ödünçteki Kitaplar -->
+    <div class="col-sm-6 col-lg-3">
+        <div class="card p-3" style="border-left: 4px solid #f59e0b;">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small fw-semibold">Ödünçteki Kitaplar</span>
+                    <h3 class="fw-bold mb-0 text-warning">{{ aktif_odunc_sayisi }}</h3>
+                </div>
+                <div class="p-3 bg-warning-subtle text-warning rounded-circle">
+                    <i class="bi bi-handbag fs-3"></i>
+                </div>
+            </div>
+            <small class="text-muted mt-2 d-block">Kullanıcılarda olan kitaplar</small>
+        </div>
+    </div>
+
+    <!-- Geciken Kitaplar -->
+    <div class="col-sm-6 col-lg-3">
+        <div class="card p-3" style="border-left: 4px solid #ef4444;">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small fw-semibold">Geciken İadeler</span>
+                    <h3 class="fw-bold mb-0 text-danger">{{ geciken_odunc_sayisi }}</h3>
+                </div>
+                <div class="p-3 bg-danger-subtle text-danger rounded-circle">
+                    <i class="bi bi-clock-history fs-3"></i>
+                </div>
+            </div>
+            <small class="text-muted mt-2 d-block">Termin süresi dolmuşlar</small>
+        </div>
+    </div>
+</div>
+
+<!-- SEKME MENÜSÜ -->
+<ul class="nav nav-pills mb-3 gap-2" id="adminTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active fw-semibold btn-rounded" id="odunc-tab" data-bs-toggle="pill" data-bs-target="#oduncPaneli" type="button" role="tab">
+            <i class="bi bi-journal-arrow-up me-1"></i> Kullanıcı Hangi Kitapları Almış? (Ödünç Takibi)
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-semibold btn-rounded" id="kullanicilar-tab" data-bs-toggle="pill" data-bs-target="#kullaniciPaneli" type="button" role="tab">
+            <i class="bi bi-people me-1"></i> Kullanıcı Listesi (Kaç Kullanıcı Var?)
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-semibold btn-rounded" id="envanter-tab" data-bs-toggle="pill" data-bs-target="#envanterPaneli" type="button" role="tab">
+            <i class="bi bi-boxes me-1"></i> Kitap Envanteri Yönetimi
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="adminTabContent">
+
+    <!-- SEKME 1: KULLANICI HANGİ KİTAPLARI ALMIŞ (ÖDÜNÇ HAREKETLERİ) -->
+    <div class="tab-pane fade show active" id="oduncPaneli" role="tabpanel">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3 border-bottom">
+                <div class="row align-items-center g-3">
+                    <div class="col-md-5">
+                        <h5 class="fw-bold mb-0 text-dark">
+                            <i class="bi bi-list-check text-primary me-1"></i>
+                            Tüm Ödünç Hareketleri &amp; İade Durumları
+                        </h5>
+                    </div>
+                    <!-- Filtreler -->
+                    <div class="col-md-7">
+                        <form action="{{ url_for('admin_paneli') }}" method="GET" class="d-flex gap-2">
+                            <select name="kullanici_id" class="form-select">
+                                <option value="">Tüm Kullanıcılar</option>
+                                {% for u in kullanicilar %}
+                                    {% if u['rol'] != 'admin' %}
+                                        <option value="{{ u['id'] }}" {% if filtre_kullanici == u['id']|string %}selected{% endif %}>
+                                            {{ u['ad_soyad'] }} (@{{ u['kullanici_adi'] }})
+                                        </option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+
+                            <select name="durum" class="form-select" style="max-width: 170px;">
+                                <option value="">Tüm Durumlar</option>
+                                <option value="oduncte" {% if filtre_durum == 'oduncte' %}selected{% endif %}>Şu An Ödünçte</option>
+                                <option value="gecikti" {% if filtre_durum == 'gecikti' %}selected{% endif %}>Gecikenler</option>
+                                <option value="teslim_edildi" {% if filtre_durum == 'teslim_edildi' %}selected{% endif %}>Teslim Edildi</option>
+                            </select>
+
+                            <button type="submit" class="btn btn-secondary btn-rounded">Filtrele</button>
+                            {% if filtre_kullanici or filtre_durum %}
+                                <a href="{{ url_for('admin_paneli') }}" class="btn btn-outline-secondary btn-rounded" title="Temizle">
+                                    <i class="bi bi-x-lg"></i>
+                                </a>
+                            {% endif %}
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                {% if odunc_hareketleri %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Kullanıcı</th>
+                                    <th>Alınan Kitap</th>
+                                    <th>Ödünç Tarihi</th>
+                                    <th>Termin (Son Teslim)</th>
+                                    <th>İade Tarihi</th>
+                                    <th>Durum / Kalan Süre</th>
+                                    <th class="text-end">İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for hareket in odunc_hareketleri %}
+                                    {% set termin_bilgi = hareket.termin_tarihi|kalan_gun_hesapla %}
+                                    <tr class="{% if hareket.durum == 'oduncte' and termin_bilgi.durum == 'gecikti' %}table-danger{% endif %}">
+                                        <td>
+                                            <div class="fw-bold text-dark">{{ hareket.ad_soyad }}</div>
+                                            <small class="text-muted">@{{ hareket.kullanici_adi }}</small>
+                                        </td>
+                                        <td>
+                                            <div class="fw-semibold text-primary">{{ hareket.kitap_adi }}</div>
+                                            <small class="text-muted">{{ hareket.yazar }} ({{ hareket.kategori }})</small>
+                                        </td>
+                                        <td>{{ hareket.odunc_tarihi }}</td>
+                                        <td>
+                                            <span class="fw-semibold">{{ hareket.termin_tarihi }}</span>
+                                        </td>
+                                        <td>
+                                            {% if hareket.iade_tarihi %}
+                                                <span class="text-success small"><i class="bi bi-check2-all me-1"></i>{{ hareket.iade_tarihi }}</span>
+                                            {% else %}
+                                                <span class="text-muted small">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if hareket.durum == 'oduncte' %}
+                                                <span class="badge bg-{{ termin_bilgi.renk }} badge-pill">
+                                                    {{ termin_bilgi.metin }}
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                                    <i class="bi bi-check-circle me-1"></i> Teslim Edildi
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end">
+                                            {% if hareket.durum == 'oduncte' %}
+                                                <form action="{{ url_for('admin_iade_al', odunc_id=hareket.odunc_id) }}" method="POST" onsubmit="return confirm('Kullanıcıdan kitabı teslim alıp envantere iade etmek istiyor musunuz?');" style="display:inline;">
+                                                    <button type="submit" class="btn btn-outline-success btn-sm btn-rounded">
+                                                        <i class="bi bi-check-lg me-1"></i> İade Al
+                                                    </button>
+                                                </form>
+                                            {% else %}
+                                                <span class="text-muted small">Tamamlandı</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-inbox text-muted" style="font-size: 2.5rem;"></i>
+                        <h6 class="mt-3 text-secondary">Filtreye uygun ödünç hareketi bulunamadı.</h6>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- SEKME 2: KULLANICILAR LİSTESİ (KAÇ KULLANICI VAR?) -->
+    <div class="tab-pane fade" id="kullaniciPaneli" role="tabpanel">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+                <div>
+                    <h5 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-people-fill text-primary me-2"></i>Kayıtlı Kullanıcı Listesi
+                    </h5>
+                    <small class="text-muted">Sistemde toplam <strong>{{ kullanici_sayisi }}</strong> aktif üye bulunmaktadır.</small>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#ID</th>
+                                <th>Ad Soyad</th>
+                                <th>Kullanıcı Adı</th>
+                                <th>Rol</th>
+                                <th>Kayıt Tarihi</th>
+                                <th>Şu An Elindeki Kitap</th>
+                                <th>Toplam Ödünç Geçmişi</th>
+                                <th class="text-end">İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for u in kullanicilar %}
+                                <tr>
+                                    <td>{{ u['id'] }}</td>
+                                    <td class="fw-bold">{{ u['ad_soyad'] }}</td>
+                                    <td><code>@{{ u['kullanici_adi'] }}</code></td>
+                                    <td>
+                                        <span class="badge {% if u['rol'] == 'admin' %}bg-danger{% else %}bg-primary-subtle text-primary border{% endif %}">
+                                            {{ 'Yönetici' if u['rol'] == 'admin' else 'Kullanıcı' }}
+                                        </span>
+                                    </td>
+                                    <td><small class="text-muted">{{ u['kayit_tarihi'] }}</small></td>
+                                    <td>
+                                        {% if u['aktif_kitap_sayisi'] > 0 %}
+                                            <span class="badge bg-warning text-dark">{{ u['aktif_kitap_sayisi'] }} Kitap</span>
+                                        {% else %}
+                                            <span class="text-muted small">0 Kitap</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border">{{ u['toplam_odunc_sayisi'] }} kez</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="{{ url_for('admin_paneli', kullanici_id=u['id']) }}" class="btn btn-outline-primary btn-sm btn-rounded" title="Aldığı Kitapları Gör">
+                                            <i class="bi bi-eye me-1"></i> Kitaplarını Gör
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SEKME 3: KİTAP ENVANTERİ YÖNETİMİ -->
+    <div class="tab-pane fade" id="envanterPaneli" role="tabpanel">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+                <h5 class="fw-bold mb-0 text-dark">
+                    <i class="bi bi-boxes text-success me-2"></i>Kütüphane Kitap Envanteri
+                </h5>
+                <button type="button" class="btn btn-success btn-sm btn-rounded" data-bs-toggle="modal" data-bs-target="#kitapEkleModal">
+                    <i class="bi bi-plus-lg me-1"></i> Yeni Kitap Ekle
+                </button>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#ID</th>
+                                <th>Kitap Adı</th>
+                                <th>Yazar</th>
+                                <th>Kategori</th>
+                                <th>Sayfa</th>
+                                <th>Toplam Stok</th>
+                                <th>Raftaki Mevcut</th>
+                                <th>Ödünçte Olan</th>
+                                <th class="text-end">İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for k in envanter %}
+                                <tr>
+                                    <td>{{ k['id'] }}</td>
+                                    <td class="fw-bold text-dark">{{ k['kitap_adi'] }}</td>
+                                    <td>{{ k['yazar'] }}</td>
+                                    <td><span class="badge bg-light text-dark border">{{ k['kategori'] }}</span></td>
+                                    <td>{{ k['sayfa_sayisi'] }}</td>
+                                    <td><strong>{{ k['toplam_adet'] }}</strong></td>
+                                    <td>
+                                        {% if k['mevcut_adet'] > 0 %}
+                                            <span class="badge bg-success-subtle text-success">{{ k['mevcut_adet'] }} adet</span>
+                                        {% else %}
+                                            <span class="badge bg-danger-subtle text-danger">Tükendi</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if k['oduncteki_adet'] > 0 %}
+                                            <span class="badge bg-warning-subtle text-warning-emphasis">{{ k['oduncteki_adet'] }} adet</span>
+                                        {% else %}
+                                            <span class="text-muted small">Yok</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <button class="btn btn-outline-secondary btn-sm btn-rounded me-1" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#kitapDuzenleModal{{ k['id'] }}" 
+                                                title="Düzenle">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </button>
+
+                                        <form action="{{ url_for('admin_kitap_sil', kitap_id=k.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Bu kitabı envanterden silmek istediğinize emin misiniz?');">
+                                            <button type="submit" class="btn btn-outline-danger btn-sm btn-rounded" title="Sil">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+
+                                        <!-- Kitap Düzenleme Modalı -->
+                                        <div class="modal fade text-start" id="kitapDuzenleModal{{ k['id'] }}" tabindex="-1" aria-hidden="true">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title fw-bold">Kitap Düzenle: {{ k['kitap_adi'] }}</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <form action="{{ url_for('admin_kitap_duzenle', kitap_id=k['id']) }}" method="POST">
+                                                        <div class="modal-body">
+                                                            <div class="mb-3">
+                                                                <label class="form-label fw-semibold">Kitap Adı</label>
+                                                                <input type="text" name="kitap_adi" class="form-control" value="{{ k['kitap_adi'] }}" required>
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label class="form-label fw-semibold">Yazar</label>
+                                                                <input type="text" name="yazar" class="form-control" value="{{ k['yazar'] }}" required>
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label class="form-label fw-semibold">Kategori</label>
+                                                                <input type="text" name="kategori" class="form-control" value="{{ k['kategori'] }}">
+                                                            </div>
+                                                            <div class="row">
+                                                                <div class="col-6 mb-3">
+                                                                    <label class="form-label fw-semibold">Sayfa Sayısı</label>
+                                                                    <input type="number" name="sayfa_sayisi" class="form-control" value="{{ k['sayfa_sayisi'] }}" min="0">
+                                                                </div>
+                                                                <div class="col-6 mb-3">
+                                                                    <label class="form-label fw-semibold">Toplam Stok Adedi</label>
+                                                                    <input type="number" name="toplam_adet" class="form-control" value="{{ k['toplam_adet'] }}" min="{{ k['oduncteki_adet'] }}" required>
+                                                                    <small class="text-muted d-block mt-1">Ödünçte olan: {{ k['oduncteki_adet'] }}</small>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary btn-rounded" data-bs-dismiss="modal">İptal</button>
+                                                            <button type="submit" class="btn btn-primary btn-rounded">Değişiklikleri Kaydet</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- YENİ KİTAP EKLEME MODALI -->
+<div class="modal fade" id="kitapEkleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="bi bi-book me-2 text-primary"></i>Yeni Kitap Ekle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('admin_kitap_ekle') }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Kitap Adı *</label>
+                        <input type="text" name="kitap_adi" class="form-control" placeholder="Örn: Sefiller" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Yazar *</label>
+                        <input type="text" name="yazar" class="form-control" placeholder="Örn: Victor Hugo" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Kategori</label>
+                        <input type="text" name="kategori" class="form-control" placeholder="Örn: Dünya Klasikleri">
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label fw-semibold">Sayfa Sayısı</label>
+                            <input type="number" name="sayfa_sayisi" class="form-control" placeholder="Örn: 450" min="0">
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label fw-semibold">Stok Adedi *</label>
+                            <input type="number" name="toplam_adet" class="form-control" value="1" min="1" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-rounded" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-primary btn-rounded">Kitabı Envantere Ekle</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+

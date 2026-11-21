@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Giriş Yap - Kütüphane Takip Sistemi{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card p-4 shadow-sm border-0">
+            <div class="text-center mb-4">
+                <div class="d-inline-flex p-3 rounded-circle bg-primary-subtle text-primary mb-3">
+                    <i class="bi bi-box-arrow-in-right fs-1"></i>
+                </div>
+                <h3 class="fw-bold">Giriş Yap</h3>
+                <p class="text-muted small">Kütüphane Takip Sistemine erişmek için giriş yapınız</p>
+            </div>
+
+            <form action="{{ url_for('login') }}" method="POST">
+                <div class="mb-3">
+                    <label for="kullanici_adi" class="form-label fw-semibold">Kullanıcı Adı</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-person"></i></span>
+                        <input type="text" class="form-control" id="kullanici_adi" name="kullanici_adi" placeholder="Örn: ahmet veya admin" required autofocus>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="sifre" class="form-label fw-semibold">Şifre</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                        <input type="password" class="form-control" id="sifre" name="sifre" placeholder="••••••••" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold btn-rounded">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Giriş Yap
+                </button>
+            </form>
+
+            <div class="text-center mt-4">
+                <p class="text-muted small mb-0">Hesabınız yok mu? <a href="{{ url_for('register') }}" class="text-primary fw-semibold text-decoration-none">Hemen Kayıt Olun</a></p>
+            </div>
+
+            <!-- Hızlı Test Girişleri Paneli -->
+            <div class="mt-4 pt-3 border-top">
+                <p class="text-muted small fw-semibold mb-2 text-center"><i class="bi bi-lightning-charge-fill text-warning"></i> Hızlı Test Girişi:</p>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm w-50" onclick="hizliDoldur('admin', 'admin123')">
+                        <i class="bi bi-shield-lock me-1 text-danger"></i> Admin Girişi
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm w-50" onclick="hizliDoldur('ogrenci', '123456')">
+                        <i class="bi bi-person me-1 text-primary"></i> Öğrenci Girişi
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function hizliDoldur(kullanici, sifre) {
+    document.getElementById('kullanici_adi').value = kullanici;
+    document.getElementById('sifre').value = sifre;
+}
+</script>
+{% endblock %}
+
