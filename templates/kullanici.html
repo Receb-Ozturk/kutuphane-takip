@@ -7,13 +7,13 @@
 <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
     <div>
         <h2 class="fw-bold mb-1"><i class="bi bi-person-lines-fill text-primary me-2"></i>Kullanıcı Paneli</h2>
-        <p class="text-muted mb-0">Ödünç aldığınız kitapları, teslim (termin) sürelerinizi ve kütüphane envanterini buradan takip edebilirsiniz.</p>
+        <p class="text-muted mb-0">Kitap taleplerinizi, teslim (termin) sürelerinizi ve kütüphane envanterini buradan takip edebilirsiniz.</p>
     </div>
 </div>
 
 <!-- Özet Kartları -->
 <div class="row g-3 mb-4">
-    <div class="col-md-4">
+    <div class="col-sm-6 col-lg-3">
         <div class="card p-3 stat-card">
             <div class="d-flex align-items-center justify-content-between">
                 <div>
@@ -24,9 +24,24 @@
                     <i class="bi bi-book fs-3"></i>
                 </div>
             </div>
+            <small class="text-muted mt-2 d-block">Şu an elinizde olan kitaplar</small>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="card p-3" style="border-left: 4px solid #f59e0b;">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small fw-semibold">Bekleyen Taleplerim</span>
+                    <h3 class="fw-bold mb-0 text-warning">{{ bekleyen_talepler|length }}</h3>
+                </div>
+                <div class="p-3 bg-warning-subtle text-warning rounded-circle">
+                    <i class="bi bi-hourglass-split fs-3"></i>
+                </div>
+            </div>
+            <small class="text-muted mt-2 d-block">Admin onayı bekleyenler</small>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
         <div class="card p-3" style="border-left: 4px solid #10b981;">
             <div class="d-flex align-items-center justify-content-between">
                 <div>
@@ -37,29 +52,88 @@
                     <i class="bi bi-check2-circle fs-3"></i>
                 </div>
             </div>
+            <small class="text-muted mt-2 d-block">Okunup iade edilmiş kitaplar</small>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-sm-6 col-lg-3">
         <div class="card p-3" style="border-left: 4px solid #6366f1;">
             <div class="d-flex align-items-center justify-content-between">
                 <div>
-                    <span class="text-muted small fw-semibold">Kütüphanedeki Toplam Kitap</span>
+                    <span class="text-muted small fw-semibold">Kütüphanedeki Kitap</span>
                     <h3 class="fw-bold mb-0 text-indigo">{{ envanter_kitaplar|length }}</h3>
                 </div>
                 <div class="p-3 bg-info-subtle text-info rounded-circle">
                     <i class="bi bi-collection fs-3"></i>
                 </div>
             </div>
+            <small class="text-muted mt-2 d-block">Mevcut toplam çeşit</small>
         </div>
     </div>
 </div>
 
-<!-- BÖLÜM 1: ÖDÜNÇ ALINAN KİTAPLAR & TERMİN SÜRELERİ -->
+<!-- BÖLÜM 1: ONAY BEKLEYEN ÖDÜNÇ TALEPLERİM -->
+{% if bekleyen_talepler %}
+<div class="card mb-4 border-0 shadow-sm" style="border-left: 5px solid #f59e0b !important;">
+    <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+        <h5 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+            <i class="bi bi-hourglass-top text-warning"></i>
+            Onay Bekleyen Ödünç Taleplerim
+        </h5>
+        <span class="badge bg-warning text-dark rounded-pill">{{ bekleyen_talepler|length }} Talep</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Talep Edilen Kitap</th>
+                        <th>Yazar &amp; Kategori</th>
+                        <th>Talep Tarihi</th>
+                        <th>Durum</th>
+                        <th class="text-end">İşlem</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for talep in bekleyen_talepler %}
+                        <tr>
+                            <td>
+                                <div class="fw-bold text-dark">{{ talep.kitap_adi }}</div>
+                                <small class="text-muted">{{ talep.sayfa_sayisi }} sayfa</small>
+                            </td>
+                            <td>
+                                <div>{{ talep.yazar }}</div>
+                                <span class="badge bg-light text-dark border">{{ talep.kategori }}</span>
+                            </td>
+                            <td>
+                                <span class="text-muted small"><i class="bi bi-calendar-check me-1"></i>{{ talep.talep_tarihi }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle badge-pill">
+                                    <i class="bi bi-clock me-1"></i> Yönetici Onayı Bekliyor
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <form action="{{ url_for('talep_iptal_et', odunc_id=talep.odunc_id) }}" method="POST" onsubmit="return confirm('Bu ödünç talebini iptal etmek istediğinize emin misiniz?');">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm btn-rounded">
+                                        <i class="bi bi-x-circle me-1"></i> Talebi İptal Et
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- BÖLÜM 2: ÖDÜNÇ ALINAN KİTAPLAR & TERMİN SÜRELERİ -->
 <div class="card mb-4 border-0 shadow-sm">
     <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
         <h5 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
-            <i class="bi bi-alarm-fill text-warning"></i>
-            Ödünç Aldığım Kitaplar &amp; Termin (Teslim) Süreleri
+            <i class="bi bi-alarm-fill text-primary"></i>
+            Üzerimdeki Kitaplar &amp; Termin (Teslim) Süreleri
         </h5>
         <span class="badge bg-primary rounded-pill">{{ aktif_oduncler|length }} Aktif Kitap</span>
     </div>
@@ -79,21 +153,21 @@
                     </thead>
                     <tbody>
                         {% for odunc in aktif_oduncler %}
-                            {% set termin_bilgi = odunc['termin_tarihi']|kalan_gun_hesapla %}
+                            {% set termin_bilgi = odunc.termin_tarihi|kalan_gun_hesapla %}
                             <tr class="{% if termin_bilgi.durum == 'gecikti' %}table-danger{% endif %}">
                                 <td>
-                                    <div class="fw-bold text-dark">{{ odunc['kitap_adi'] }}</div>
-                                    <small class="text-muted">{{ odunc['sayfa_sayisi'] }} sayfa</small>
+                                    <div class="fw-bold text-dark">{{ odunc.kitap_adi }}</div>
+                                    <small class="text-muted">{{ odunc.sayfa_sayisi }} sayfa</small>
                                 </td>
                                 <td>
-                                    <div>{{ odunc['yazar'] }}</div>
-                                    <span class="badge bg-light text-dark border">{{ odunc['kategori'] }}</span>
+                                    <div>{{ odunc.yazar }}</div>
+                                    <span class="badge bg-light text-dark border">{{ odunc.kategori }}</span>
                                 </td>
                                 <td>
-                                    <span class="text-muted small"><i class="bi bi-calendar3 me-1"></i>{{ odunc['odunc_tarihi'] }}</span>
+                                    <span class="text-muted small"><i class="bi bi-calendar3 me-1"></i>{{ odunc.odunc_tarihi }}</span>
                                 </td>
                                 <td>
-                                    <span class="fw-semibold"><i class="bi bi-calendar-event me-1"></i>{{ odunc['termin_tarihi'] }}</span>
+                                    <span class="fw-semibold"><i class="bi bi-calendar-event me-1"></i>{{ odunc.termin_tarihi }}</span>
                                 </td>
                                 <td>
                                     <span class="badge bg-{{ termin_bilgi.renk }} badge-pill fs-7">
@@ -123,20 +197,20 @@
             <div class="text-center py-5">
                 <i class="bi bi-bookmark-check text-muted" style="font-size: 3rem;"></i>
                 <h5 class="mt-3 text-secondary">Şu anda üzerinizde ödünç alınmış kitap bulunmuyor.</h5>
-                <p class="text-muted small">Aşağıdaki kütüphane envanterinden dilediğiniz kitabı hemen ödünç alabilirsiniz.</p>
+                <p class="text-muted small">Aşağıdaki kütüphane envanterinden dilediğiniz kitap için hemen talep oluşturabilirsiniz.</p>
             </div>
         {% endif %}
     </div>
 </div>
 
-<!-- BÖLÜM 2: KÜTÜPHANE KİTAP ENVANTERİ & ÖDÜNÇ ALMA PANELİ -->
+<!-- BÖLÜM 3: KÜTÜPHANE KİTAP ENVANTERİ & TALEP GÖNDERME PANELİ -->
 <div class="card mb-4 border-0 shadow-sm">
     <div class="card-header bg-white py-3 border-bottom">
         <div class="row align-items-center g-3">
             <div class="col-md-5">
                 <h5 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
                     <i class="bi bi-bookshelf text-primary"></i>
-                    Kütüphane Kitap Envanteri &amp; Ödünç Alma
+                    Kütüphane Kitap Envanteri &amp; Talep Gönderme
                 </h5>
             </div>
             <!-- Arama ve Kategori Filtresi -->
@@ -149,8 +223,8 @@
                     <select name="kategori" class="form-select" style="max-width: 180px;">
                         <option value="">Tüm Kategoriler</option>
                         {% for kat in kategoriler %}
-                            <option value="{{ kat['kategori'] }}" {% if secili_kategori == kat['kategori'] %}selected{% endif %}>
-                                {{ kat['kategori'] }}
+                            <option value="{{ kat.kategori }}" {% if secili_kategori == kat.kategori %}selected{% endif %}>
+                                {{ kat.kategori }}
                             </option>
                         {% endfor %}
                     </select>
@@ -175,7 +249,7 @@
                             <th>Kategori</th>
                             <th>Sayfa</th>
                             <th>Stok Durumu</th>
-                            <th class="text-end">Ödünç Alma</th>
+                            <th class="text-end">İşlem</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -184,40 +258,44 @@
                                 <td>
                                     <div class="fw-bold text-dark d-flex align-items-center gap-2">
                                         <i class="bi bi-book text-muted"></i>
-                                        {{ kitap['kitap_adi'] }}
+                                        {{ kitap.kitap_adi }}
                                     </div>
                                 </td>
-                                <td>{{ kitap['yazar'] }}</td>
+                                <td>{{ kitap.yazar }}</td>
                                 <td>
                                     <span class="badge bg-secondary-subtle text-secondary border">
-                                        {{ kitap['kategori'] }}
+                                        {{ kitap.kategori }}
                                     </span>
                                 </td>
-                                <td>{{ kitap['sayfa_sayisi'] }}</td>
+                                <td>{{ kitap.sayfa_sayisi }}</td>
                                 <td>
-                                    {% if kitap['mevcut_adet'] > 0 %}
+                                    {% if kitap.mevcut_adet > 0 %}
                                         <span class="badge bg-success-subtle text-success border border-success-subtle">
-                                            <i class="bi bi-check-circle me-1"></i> Rafta: {{ kitap['mevcut_adet'] }} / {{ kitap['toplam_adet'] }}
+                                            <i class="bi bi-check-circle me-1"></i> Rafta: {{ kitap.mevcut_adet }} / {{ kitap.toplam_adet }}
                                         </span>
                                     {% else %}
                                         <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
-                                            <i class="bi bi-x-circle me-1"></i> Tükendi (0/{{ kitap['toplam_adet'] }})
+                                            <i class="bi bi-x-circle me-1"></i> Tükendi (0/{{ kitap.toplam_adet }})
                                         </span>
                                     {% endif %}
                                 </td>
                                 <td class="text-end">
-                                    {% if kitap['id'] in elindeki_kitap_idleri %}
+                                    {% if kitap.id in elindeki_kitap_idleri %}
                                         <button class="btn btn-secondary btn-sm btn-rounded" disabled>
                                             <i class="bi bi-check2 me-1"></i> Sizde Var
                                         </button>
-                                    {% elif kitap['mevcut_adet'] <= 0 %}
+                                    {% elif kitap.id in talep_edilen_kitap_idleri %}
+                                        <button class="btn btn-warning btn-sm btn-rounded text-dark" disabled>
+                                            <i class="bi bi-hourglass-split me-1"></i> Onay Bekliyor
+                                        </button>
+                                    {% elif kitap.mevcut_adet <= 0 %}
                                         <button class="btn btn-outline-secondary btn-sm btn-rounded" disabled>
                                             Stokta Yok
                                         </button>
                                     {% else %}
-                                        <form action="{{ url_for('kitap_odunc_al', kitap_id=kitap['id']) }}" method="POST" style="display:inline;">
-                                            <button type="submit" class="btn btn-primary btn-sm btn-rounded" onclick="return confirm('Bu kitabı 14 gün süreyle ödünç almak istiyor musunuz?');">
-                                                <i class="bi bi-plus-circle me-1"></i> Ödünç Al
+                                        <form action="{{ url_for('kitap_talep_et', kitap_id=kitap.id) }}" method="POST" style="display:inline;">
+                                            <button type="submit" class="btn btn-primary btn-sm btn-rounded" onclick="return confirm('Bu kitap için kütüphane yöneticisine ödünç talebi göndermek istiyor musunuz?');">
+                                                <i class="bi bi-send me-1"></i> Talep Gönder
                                             </button>
                                         </form>
                                     {% endif %}
@@ -236,14 +314,14 @@
     </div>
 </div>
 
-<!-- BÖLÜM 3: GEÇMİŞTE İADE EDİLEN KİTAPLAR (ÖDÜNÇ GEÇMİŞİ) -->
+<!-- BÖLÜM 4: GEÇMİŞTE İADE EDİLEN KİTAPLAR (ÖDÜNÇ GEÇMİŞİ) -->
 {% if gecmis_oduncler %}
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-header bg-white py-3 border-bottom">
         <a class="text-decoration-none text-dark d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#gecmisCollapse" role="button">
             <span class="fw-bold d-flex align-items-center gap-2">
                 <i class="bi bi-clock-history text-secondary"></i>
-                Ödünç Geçmişim (Daha Önce Teslim Ettiğim Kitaplar)
+                Ödünç Geçmişim (Teslim Edilenler &amp; Talepler)
             </span>
             <i class="bi bi-chevron-down"></i>
         </a>
@@ -256,21 +334,33 @@
                         <tr>
                             <th>Kitap Adı</th>
                             <th>Yazar</th>
-                            <th>Ödünç Tarihi</th>
+                            <th>Ödünç / Talep Tarihi</th>
                             <th>Termin Tarihi</th>
-                            <th>İade Edildiği Tarih</th>
+                            <th>İade Tarihi</th>
                             <th>Durum</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for odunc in gecmis_oduncler %}
                             <tr>
-                                <td class="fw-semibold">{{ odunc['kitap_adi'] }}</td>
-                                <td>{{ odunc['yazar'] }}</td>
-                                <td>{{ odunc['odunc_tarihi'] }}</td>
-                                <td>{{ odunc['termin_tarihi'] }}</td>
-                                <td><i class="bi bi-check-all text-success me-1"></i>{{ odunc['iade_tarihi'] }}</td>
-                                <td><span class="badge bg-success-subtle text-success">Teslim Edildi</span></td>
+                                <td class="fw-semibold">{{ odunc.kitap_adi }}</td>
+                                <td>{{ odunc.yazar }}</td>
+                                <td>{{ odunc.odunc_tarihi or odunc.talep_tarihi }}</td>
+                                <td>{{ odunc.termin_tarihi or '-' }}</td>
+                                <td>
+                                    {% if odunc.iade_tarihi %}
+                                        <i class="bi bi-check-all text-success me-1"></i>{{ odunc.iade_tarihi }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if odunc.durum == 'teslim_edildi' %}
+                                        <span class="badge bg-success-subtle text-success">Teslim Edildi</span>
+                                    {% elif odunc.durum == 'reddedildi' %}
+                                        <span class="badge bg-danger-subtle text-danger">Talep Reddedildi</span>
+                                    {% endif %}
+                                </td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -282,4 +372,3 @@
 {% endif %}
 
 {% endblock %}
-

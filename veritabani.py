@@ -25,14 +25,7 @@ def tablolari_olustur():
         )
     """)
 
-    # Kitaplar Tablosu kontrolü - eğer eski şema ise baştan oluşturalım
-    imlec.execute("PRAGMA table_info(kitaplar)")
-    kitap_sutunlar = [col["name"] for col in imlec.fetchall()]
-    
-    if kitap_sutunlar and "yazar" not in kitap_sutunlar:
-        # Eski basit tablo var, yenisiyle değiştirelim
-        imlec.execute("DROP TABLE IF EXISTS kitaplar")
-
+    # Kitaplar Tablosu
     imlec.execute("""
         CREATE TABLE IF NOT EXISTS kitaplar (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -46,20 +39,28 @@ def tablolari_olustur():
         )
     """)
 
-    # Ödünç İşlemleri Tablosu
+    # Ödünç ve Talep İşlemleri Tablosu
     imlec.execute("""
         CREATE TABLE IF NOT EXISTS oduncler (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             kullanici_id INTEGER NOT NULL,
             kitap_id INTEGER NOT NULL,
-            odunc_tarihi TEXT NOT NULL,
-            termin_tarihi TEXT NOT NULL,
+            talep_tarihi TEXT DEFAULT (date('now', 'localtime')),
+            odunc_tarihi TEXT,
+            termin_tarihi TEXT,
             iade_tarihi TEXT,
-            durum TEXT NOT NULL DEFAULT 'oduncte',
+            durum TEXT NOT NULL DEFAULT 'beklemede',
             FOREIGN KEY (kullanici_id) REFERENCES kullanicilar (id) ON DELETE CASCADE,
             FOREIGN KEY (kitap_id) REFERENCES kitaplar (id) ON DELETE CASCADE
         )
     """)
+
+    # Sütun kontrolü - migration
+    imlec.execute("PRAGMA table_info(oduncler)")
+    odunc_sutunlar = [col["name"] for col in imlec.fetchall()]
+    if "talep_tarihi" not in odunc_sutunlar:
+        imlec.execute("ALTER TABLE oduncler ADD COLUMN talep_tarihi TEXT")
+        imlec.execute("UPDATE oduncler SET talep_tarihi = odunc_tarihi WHERE talep_tarihi IS NULL")
 
     # Varsayılan Admin ve Kullanıcı Hesapları
     # Admin: admin / admin123
@@ -89,7 +90,7 @@ def tablolari_olustur():
             VALUES (?, ?, ?, ?)
         """, ("elif", elif_sifre, "Elif Demir", "kullanici"))
 
-    # Örnek kitaplar ekleyelim
+    # Örnek kitaplar ekleyelim (eğer hiç kitap yoksa)
     kitap_sayisi = imlec.execute("SELECT COUNT(*) as sayi FROM kitaplar").fetchone()["sayi"]
     if kitap_sayisi == 0:
         ornek_kitaplar = [
@@ -108,25 +109,6 @@ def tablolari_olustur():
             INSERT INTO kitaplar (kitap_adi, yazar, kategori, sayfa_sayisi, toplam_adet, mevcut_adet)
             VALUES (?, ?, ?, ?, ?, ?)
         """, ornek_kitaplar)
-
-        # Örnek bir ödünç kaydı ekleyelim (ogrenci bir kitap almış olsun)
-        ogrenci_id = imlec.execute("SELECT id FROM kullanicilar WHERE kullanici_adi = 'ogrenci'").fetchone()["id"]
-        elif_id = imlec.execute("SELECT id FROM kullanicilar WHERE kullanici_adi = 'elif'").fetchone()["id"]
-        
-        suc_ve_ceza_id = imlec.execute("SELECT id FROM kitaplar WHERE kitap_adi = 'Suç ve Ceza'").fetchone()["id"]
-        orwell_id = imlec.execute("SELECT id FROM kitaplar WHERE kitap_adi = '1984'").fetchone()["id"]
-        
-        # 1. Ödünç: ogrenci -> Suç ve Ceza (termin: 10 gün sonrası)
-        imlec.execute("""
-            INSERT INTO oduncler (kullanici_id, kitap_id, odunc_tarihi, termin_tarihi, durum)
-            VALUES (?, ?, date('now', '-4 days'), date('now', '+10 days'), 'oduncte')
-        """, (ogrenci_id, suc_ve_ceza_id))
-
-        # 2. Ödünç: elif -> 1984 (termin: 5 gün sonrası)
-        imlec.execute("""
-            INSERT INTO oduncler (kullanici_id, kitap_id, odunc_tarihi, termin_tarihi, durum)
-            VALUES (?, ?, date('now', '-9 days'), date('now', '+5 days'), 'oduncte')
-        """, (elif_id, orwell_id))
 
     baglanti.commit()
     baglanti.close()
