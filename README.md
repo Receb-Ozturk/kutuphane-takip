@@ -77,3 +77,5 @@ python app.py
 
 ### 3. Tarayıcınızda Açın:
 Tarayıcınızdan **`http://127.0.0.1:5000`** adresine giderek sistemi kullanmaya başlayabilirsiniz.
+
+#### -Kurulum yapmadan kullanmak için 35.255.124.16:5000 adresini ziyaret edebilirsiniz.
